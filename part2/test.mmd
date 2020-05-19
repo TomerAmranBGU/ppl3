@@ -1,0 +1,8 @@
+graph TD
+DefineExp_1[DefineExp] -->|var| Var_1["VarDecl(my-list)"]
+DefineExp_1 -->|val| LitExp_1[LitExp]
+LitExp_1 -->|val| CompoundSExp_1["CompoundSExp"]
+CompoundSExp_1 -->|val1| number_1["number(1)"]
+CompoundSExp_1 -->|val2| CompoundSExp_2["CompoundSExp"]
+CompoundSExp_2 -->|val1| number_2["number(2)"]
+CompoundSExp_2 -->|val2| EmptySExp_1["EmptySExp"]
