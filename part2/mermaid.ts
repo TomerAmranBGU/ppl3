@@ -85,23 +85,29 @@ const doDefineExp = (def: DefineExp, my_id: string , parentNode: Node ,lable: st
             (isRoot) ? [] : 
             (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`DefineExp`))] :
             [makeEdge(parentNode,makeNodeDecl(my_id,`DefineExp`),makeEdgeLable(lable))],
-            innerNode(def.var,(isRoot)?makeNodeDecl(my_id,'DefineExp'):makeNodeRef(my_id),'var',GC)).concat(innerNode(def.val,makeNodeRef(my_id),'val',GC))
+            innerNode(def.var,(isRoot)?makeNodeDecl(my_id,'DefineExp'):makeNodeRef(my_id),'var',GC))
+            .concat(innerNode(def.val,makeNodeRef(my_id),'val',GC))
 const doVarDecl = (varDecl: VarDecl , parentNode: Node ,lable: string,GC : GlobalCounter): Edge[] =>
-            [makeEdge(parentNode,makeNodeDecl(GC.VarDeclCounter('VarDecl'),'VarDecl'),makeEdgeLable(lable))]
+            [makeEdge(parentNode,makeNodeDecl(GC.VarDeclCounter('VarDecl'),`VarDecl(${varDecl.var})`),makeEdgeLable(lable))]
 const doAppExp = (app: AppExp, my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
         concat(
             (isRoot) ? [] : 
             (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`))] :
             [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`),makeEdgeLable(lable))],
-            innerNode(makeRator(app.rator),(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC)).
+            innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC)).
             concat(innerNode(makeRands(app.rands),(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rands',GC))
-
+const doRands = (rands: Rands, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
+            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            .concat(flatten(rands.cexps.map((cexp:CExp)=> innerNode(cexp,makeNodeRef(my_id),'',GC))))
 const doAtomicExp = (exp: AtomicExp, parentNode: Node ,lable: string ,GC : GlobalCounter): Edge[]=>
             (lable === '') ? [makeEdge(parentNode,AtomicExpToNodeDecl(exp,GC))]:
             [makeEdge(parentNode,AtomicExpToNodeDecl(exp,GC),makeEdgeLable(lable))]
 
-const innerNode = (exp: Exp| Exps | VarDecl | Rator | Rands, parentNode: Node , lable: string , GC : GlobalCounter): Edge[] =>
+const innerNode = (exp: Exp| Exps | VarDecl | Rands, parentNode: Node , lable: string , GC : GlobalCounter): Edge[] =>
             isExps(exp) ? doExps(exp,GC.ExpsCounter('Exps'),parentNode,lable,GC):
+            isRands(exp) ? doRands(exp,GC.RandsCounter('Rands'),parentNode,lable,GC):
+            isAppExp(exp) ? doAppExp(exp,GC.AppExpCounter('AppExp'),parentNode,lable,false,GC):
+            isDefineExp(exp) ? doDefineExp(exp,GC.DefineExpCounter('DefineExp'),parentNode,lable,false,GC):
             isVarDecl(exp) ? doVarDecl(exp ,parentNode,lable,GC):
             isAtomicExp(exp) ? doAtomicExp(exp, parentNode,lable,GC):
             []
