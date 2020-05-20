@@ -13,7 +13,7 @@ console.log(util.inspect(counter("hello")));
 console.log(util.inspect(counter("hello")));
 console.log(util.inspect(counter("hello")));
 
-
+console.log('kaki baleben!!!!')
 const y = parseL4(`(L4 ((lambda (x) (* x x)) (+ 5 4)) (if (> y 6) 8 (for i 1 3 (* i i))))`)
 isOk(y) ? console.log(util.inspect(y.value)):
 console.log('f')
