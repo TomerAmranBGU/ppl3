@@ -12,7 +12,7 @@ import { parse as p, isSexpString, isToken } from "../shared/parser";
 const util = require('util');
 
 const p1 = L4toMermaid('(L4 (define x 1) (+ 1 2) #t 3)');
-const p2 = L4toMermaid('(+ 1 2)');
+const p2 = L4toMermaid('(/ #t 2)');
 const p3 = L4toMermaid(`(define x 1)`);
 const p4 = L4toMermaid('+');
 

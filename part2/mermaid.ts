@@ -5,7 +5,7 @@ import { parse as p, isSexpString, isToken } from "../shared/parser";
 import { Result, makeOk, makeFailure, bind, mapResult, safe2, isOk } from "../shared/result";
 import {EdgeLable, Edge, isNodeDecl,Node, NodeRef, NodeDecl, Dir, isTD, GraphContent, isAtomicGraph, Graph, makeGraph, makeTD, makeCompoundGraph, makeEdge, makeNodeDecl, makeNodeRef, makeEdgeLable, makeAtomicGraph } from "./mermaid-ast";
 import {makeVarGen} from "../L3/substitute"
-import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp } from "./L4-ast";
+import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp, makeBoolExp } from "./L4-ast";
 import { isVarDecl } from "../L3/L3-ast";
 
 // interface Rands {tags: "Rands" ; }
@@ -16,7 +16,7 @@ interface Rator {tag : "Rator"; exp:CExp}
 const isRator = (x:any): x is Rator => (x.tag === "Rator")
 const makeRator = (exp: CExp): Rator => ({tag:"Rator", exp:exp})
 interface Rands {tag : "Rands"; cexps:CExp[]}
-const isRands = (x:any): x is Rands => (x.tag === "Rator")
+const isRands = (x:any): x is Rands => (x.tag === "Rands")
 const makeRands = (cexps: CExp[]): Rands => ({tag:"Rands", cexps:cexps})
 
 interface GlobalCounter {tag:"GlobalCounter" 
@@ -94,8 +94,8 @@ const doAppExp = (app: AppExp, my_id: string , parentNode: Node ,lable: string ,
             (isRoot) ? [] : 
             (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`))] :
             [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`),makeEdgeLable(lable))],
-            innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC)).
-            concat(innerNode(makeRands(app.rands),(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rands',GC))
+            innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC))
+            .concat(innerNode(makeRands(app.rands),makeNodeRef(my_id),'rands',GC))
 const doRands = (rands: Rands, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
             [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
             .concat(flatten(rands.cexps.map((cexp:CExp)=> innerNode(cexp,makeNodeRef(my_id),'',GC))))
