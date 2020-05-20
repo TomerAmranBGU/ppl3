@@ -7,16 +7,12 @@ import { Result, makeOk, makeFailure, bind, mapResult, safe2, isOk } from "../sh
 import { parseL4 } from "./L4-ast";
 import { parseL3 } from "../L3/L3-ast";
 import { makeVarGen } from "../L3/substitute";
+import { L4toMermaid } from "./mermaid";
 const util = require('util');
-const counter  =makeVarGen();
-console.log(util.inspect(counter("hello")));
-console.log(util.inspect(counter("hello")));
-console.log(util.inspect(counter("hello")));
 
-console.log('kaki baleben!!!!')
-const y = parseL4(`(L4 ((lambda (x) (* x x)) (+ 5 4)) (if (> y 6) 8 (for i 1 3 (* i i))))`)
-isOk(y) ? console.log(util.inspect(y.value)):
-console.log('f')
+
+const x = L4toMermaid('1');
+isOk(x) ? console.log(x.value) : console.log(x.message)
 
 
 //****UNPARSE MERMAID TEST****//
