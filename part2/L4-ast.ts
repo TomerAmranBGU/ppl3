@@ -70,8 +70,8 @@ export interface AppExp {tag: "AppExp"; rator: CExp; rands: CExp[]; }//V
 // L2
 export interface IfExp {tag: "IfExp"; test: CExp; then: CExp; alt: CExp; }//V
 export interface ProcExp {tag: "ProcExp"; args: VarDecl[], body: CExp[]; } //V
-export interface Binding {tag: "Binding"; var: VarDecl; val: CExp; }
-export interface LetExp {tag: "LetExp"; bindings: Binding[]; body: CExp[]; }
+export interface Binding {tag: "Binding"; var: VarDecl; val: CExp; } //V
+export interface LetExp {tag: "LetExp"; bindings: Binding[]; body: CExp[]; }//V
 // L3
 export interface LitExp {tag: "LitExp"; val: SExpValue; }
 // L4

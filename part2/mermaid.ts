@@ -1,12 +1,14 @@
 import { map, flatten, concat } from "ramda";
 import { allT, first, second, rest, isEmpty } from "../shared/list";
-import { isArray, isString, isNumericString, isIdentifier } from "../shared/type-predicates";
+import { isArray, isString, isNumericString, isIdentifier, isNumber, isBoolean } from "../shared/type-predicates";
 import { parse as p, isSexpString, isToken } from "../shared/parser";
 import { Result, makeOk, makeFailure, bind, mapResult, safe2, isOk } from "../shared/result";
 import {EdgeLable, Edge, isNodeDecl,Node, NodeRef, NodeDecl, Dir, isTD, GraphContent, isAtomicGraph, Graph, makeGraph, makeTD, makeCompoundGraph, makeEdge, makeNodeDecl, makeNodeRef, makeEdgeLable, makeAtomicGraph } from "./mermaid-ast";
 import {makeVarGen} from "../L3/substitute"
-import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp, makeBoolExp,IfExp, ProcExp, Binding } from "./L4-ast";
+import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp, makeBoolExp,IfExp, ProcExp, Binding, LetExp, isBinding, LitExp, isCompoundExp, LetrecExp, SetExp } from "./L4-ast";
 import { isVarDecl } from "../L3/L3-ast";
+import { SExpValue, EmptySExp, SymbolSExp, isEmptySExp, isCompoundSExp, isSymbolSExp } from "./L4-value";
+import { CompoundSExp } from "../part3/L4-value";
 
 // interface Rands {tags: "Rands" ; }
 interface Exps {tag: "Exps" ; exps:Exp[]}
@@ -46,6 +48,15 @@ interface GlobalCounter {tag:"GlobalCounter"
     ; RandsCounter: (s:string)=>string
     ; ParamsCounter: (s:string)=>string
     ; BodyCounter: (s:string)=>string
+    ; BindingsCounter: (s:string)=>string
+    ; EmptySExpCounter: (s:string)=>string
+    ; NumberCounter: (s:string)=>string
+    ; BooleanCounter: (s:string)=>string
+    ; StringCounter: (s:string)=>string
+    ; SymbolSExpCounter: (s:string)=>string
+    ; CompoundSExpCounter: (s:string)=>string
+
+
 
 }
 const makeGlobalCounter = (): GlobalCounter => 
@@ -69,7 +80,16 @@ const makeGlobalCounter = (): GlobalCounter =>
     SetExpCounter : makeVarGen(),
     RandsCounter : makeVarGen(),
     ParamsCounter : makeVarGen(),
-    BodyCounter : makeVarGen()
+    BodyCounter : makeVarGen(),
+    BindingsCounter : makeVarGen(),
+    EmptySExpCounter : makeVarGen(),
+    NumberCounter : makeVarGen(),
+    BooleanCounter : makeVarGen(),
+    StringCounter : makeVarGen(),
+    SymbolSExpCounter : makeVarGen(),
+    CompoundSExpCounter : makeVarGen(),
+
+
 })
 //AtomicGraph code
 const AtomicExpToNodeDecl = (exp: AtomicExp, GC : GlobalCounter):NodeDecl => 
@@ -104,7 +124,8 @@ const doAppExp = (app: AppExp, my_id: string , parentNode: Node ,lable: string ,
             (isRoot) ? [] : 
             (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`))] :
             [makeEdge(parentNode,makeNodeDecl(my_id,`AppExp`),makeEdgeLable(lable))],
-            innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC))
+            
+             innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC))
             .concat(innerNode(makeRands(app.rands),makeNodeRef(my_id),'rands',GC))
 const doRands = (rands: Rands, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
             [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
@@ -133,6 +154,22 @@ const doProcExp = (proc: ProcExp,my_id: string , parentNode: Node ,lable: string
 const doParms= (params:Params, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
             [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
             .concat(flatten(params.decls.map((x:VarDecl)=>innerNode(x,makeNodeRef(my_id),'',GC))))
+const doLetExp = (letexp: LetExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
+            flatten([
+                (isRoot) ? [] : 
+                (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`LetExp`))] :
+                [makeEdge(parentNode,makeNodeDecl(my_id,`LetExp`),makeEdgeLable(lable))]
+                ,innerNode(makeBindings(letexp.bindings),(isRoot)?makeNodeDecl(my_id,'LetExp'):makeNodeRef(my_id),'bindings',GC)
+                ,innerNode(makeBody(letexp.body),makeNodeRef(my_id),'body',GC)
+            ])
+const doLetrecExp = (letexp: LetrecExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
+            flatten([
+                (isRoot) ? [] : 
+                (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`LetrecExp`))] :
+                [makeEdge(parentNode,makeNodeDecl(my_id,`LetrecExp`),makeEdgeLable(lable))]
+                ,innerNode(makeBindings(letexp.bindings),(isRoot)?makeNodeDecl(my_id,'LetrecExp'):makeNodeRef(my_id),'bindings',GC)
+                ,innerNode(makeBody(letexp.body),makeNodeRef(my_id),'body',GC)
+            ])
 const doBody = (body:Body, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
             [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
             .concat(flatten(body.cexps.map((x:CExp)=>innerNode(x,makeNodeRef(my_id),'',GC))))
@@ -141,7 +178,43 @@ const doBinding = (binding: Binding,my_id: string , parentNode: Node ,GC : Globa
             innerNode(binding.var,makeNodeRef(my_id),'var',GC),
             innerNode(binding.val,makeNodeRef(my_id),'val',GC),
             ])
-const innerNode = (exp: Exp| Exps | VarDecl | Rands | Params | Body, parentNode: Node , lable: string , GC : GlobalCounter): Edge[] =>
+const doBindings = (bindings: Bindings, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
+            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            .concat(flatten(bindings.bindings.map((bind:Binding)=> innerNode(bind,makeNodeRef(my_id),'',GC))))
+
+const doLitExp= (litexp: LitExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
+            flatten([
+                (isRoot) ? [] : 
+                (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`LitExp`))] :
+                [makeEdge(parentNode,makeNodeDecl(my_id,`LitExp`),makeEdgeLable(lable))],
+                innerNode(litexp.val,(isRoot)?makeNodeDecl(my_id,'LetExp'):makeNodeRef(my_id),'val',GC)
+            ])
+const doCompoundSExp = (comp: CompoundSExp,  my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            flatten([
+                makeEdge(parentNode,makeNodeDecl(my_id,'CompoundSExp'),makeEdgeLable(lable)),
+                innerNode(comp.val1,makeNodeRef(my_id),'val1',GC),
+                innerNode(comp.val2,makeNodeRef(my_id),'val2',GC),
+            ])
+const doEmptySExp = (empy: EmptySExp, parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            [makeEdge(parentNode,makeNodeDecl(GC.EmptySExpCounter('EmptySExp'),'EmptySExp'),makeEdgeLable(lable))]
+const doNumber = (num: number ,parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            [makeEdge(parentNode,makeNodeDecl(GC.NumberCounter('Number'),`number(${num})`),makeEdgeLable(lable))]  
+const doBoolean = (bool: boolean ,parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            [makeEdge(parentNode,makeNodeDecl(GC.BooleanCounter('Boolean'),`boolean(${bool})`),makeEdgeLable(lable))]  
+
+const doString = (str: string ,parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            [makeEdge(parentNode,makeNodeDecl(GC.StringCounter('String'),`string(${str})`),makeEdgeLable(lable))]  
+const doSymbolSExp = (sym: SymbolSExp ,parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
+            [makeEdge(parentNode,makeNodeDecl(GC.SymbolSExpCounter('SymbolSExp'),`symbol(${sym.val})`),makeEdgeLable(lable))]  
+const doSetExp = (set:SetExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
+            flatten([
+                (isRoot) ? [] : 
+                (lable === '') ? [makeEdge(parentNode,makeNodeDecl(my_id,`SetExp`))] :
+                [makeEdge(parentNode,makeNodeDecl(my_id,`SetExp`),makeEdgeLable(lable))],
+                innerNode(set.var,(isRoot)?makeNodeDecl(my_id,'SetExp'):makeNodeRef(my_id),'var',GC),
+                innerNode(set.val,(isRoot)?makeNodeDecl(my_id,'SetExp'):makeNodeRef(my_id),'val',GC),
+            ])
+const innerNode = (exp: Exp| Exps | VarDecl | Rands | Params | Body | Binding | Bindings | SExpValue, parentNode: Node , lable: string , GC : GlobalCounter): Edge[] =>
             isExps(exp) ? doExps(exp,GC.ExpsCounter('Exps'),parentNode,lable,GC):
             isRands(exp) ? doRands(exp,GC.RandsCounter('Rands'),parentNode,lable,GC):
             isAppExp(exp) ? doAppExp(exp,GC.AppExpCounter('AppExp'),parentNode,lable,false,GC):
@@ -151,6 +224,18 @@ const innerNode = (exp: Exp| Exps | VarDecl | Rands | Params | Body, parentNode:
             isProcExp(exp) ? doProcExp(exp,GC.ProcExpCounter('ProcExp'),parentNode,lable,false,GC):
             isParams(exp) ? doParms(exp,GC.ParamsCounter('Params'),parentNode,lable,GC):
             isBody(exp) ? doBody(exp,GC.BodyCounter('Body'),parentNode,lable,GC):
+            isBindings(exp) ? doBindings(exp,GC.BindingsCounter('Bindings'),parentNode,lable,GC):
+            isBinding(exp) ? doBinding(exp,GC.BindingCounter('Binding'),parentNode,GC):
+            isLetExp(exp) ? doLetExp(exp,GC.LetExpCounter('LetExp'),parentNode,lable,false,GC):
+            isLetrecExp(exp) ? doLetrecExp(exp,GC.LetExpCounter('LetrecExp'),parentNode,lable,false,GC):
+            isLitExp(exp) ? doLitExp(exp,GC.LetExpCounter('LitExp'),parentNode,lable,false,GC):
+            isCompoundSExp(exp)?  doCompoundSExp(exp,GC.CompoundSExpCounter('CompoundSExp'),parentNode,lable,GC):
+            isEmptySExp(exp) ? doEmptySExp(exp,parentNode,lable,GC):
+            isNumber(exp) ? doNumber(exp,parentNode,lable,GC):
+            isBoolean(exp) ? doBoolean(exp,parentNode,lable,GC):
+            isString(exp)? doString(exp,parentNode,lable,GC):
+            isSymbolSExp(exp) ? doSymbolSExp(exp,parentNode,lable,GC):
+            isSetExp(exp) ? doSetExp(exp,GC.SetExpCounter('SetExp'),parentNode,lable,false,GC):
             isAtomicExp(exp) ? doAtomicExp(exp, parentNode,lable,GC):
             []
 
@@ -161,12 +246,12 @@ const rootNode = (exp: Parsed, GC : GlobalCounter): GraphContent =>
             isAppExp(exp)? makeCompoundGraph(doAppExp(exp,GC.AppExpCounter('AppExp'),makeNodeRef('dummi'),'',true,GC)):
             isIfExp(exp)?  makeCompoundGraph(doIf(exp,GC.IfExpCounter('IfExp'),makeNodeRef('dummi'),'',true,GC)):
             isProcExp(exp)? makeCompoundGraph(doProcExp(exp,GC.ProcExpCounter('ProcExp'),makeNodeRef('dummi'),'',true,GC)):
+            isLetExp(exp) ? makeCompoundGraph(doLetExp(exp,GC.LetExpCounter('LetExp'),makeNodeRef('dummi'),'',true,GC)):
+            isLetrecExp(exp) ? makeCompoundGraph(doLetrecExp(exp,GC.LetrecExpCounter('LetrecExp'),makeNodeRef('dummi'),'',true,GC)):
+            isLitExp(exp) ? makeCompoundGraph(doLitExp(exp,GC.LetExpCounter('LitExp'),makeNodeRef('dummi'),'',true,GC)):
+            isSetExp(exp)? makeCompoundGraph(doSetExp(exp,GC.SetExpCounter('SetExp'),makeNodeRef('dummi'),'',true,GC)):
             makeAtomicGraph(makeNodeDecl('EVERYTHING IS WROG!!!','EVERYTHING IS WROG!!!'))
-            // isProcExp(exp)? :
-            // isLetExp(exp)? :
-            // isLitExp(exp)? :
-            // isLetrecExp(exp)? :
-            // isSetExp(exp)? :
+            
 
 export const mapL4toMermaid = (exp: Parsed): Result<Graph> =>  
         makeOk(makeGraph(makeTD(),rootNode(exp,makeGlobalCounter())))
@@ -197,7 +282,7 @@ export const unparseMermaid = (exp: Graph): Result<string> =>
 export const L4toMermaid = (concrete: string): Result<string> => 
         bind(bind(ExpOrProgram(concrete),mapL4toMermaid),unparseMermaid)
 
-const ExpOrProgram = (concrete: string) : Result<Parsed> => isOk(parseL4(concrete)) ? parseL4(concrete) : bind(p(concrete), parseL4Exp)
+const ExpOrProgram = (concrete: string) : Result<Parsed> => !isOk(parseL4(concrete)) ?  bind(p(concrete), parseL4Exp) : parseL4(concrete)
 
 
 
