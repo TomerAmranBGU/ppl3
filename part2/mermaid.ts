@@ -105,7 +105,7 @@ const doProgram = (program: Program, GC : GlobalCounter): Edge[] =>
             innerNode(makeExps(program.exps),makeNodeDecl(GC.ProgramCounter('Program'),`Program`),'exps',GC) 
 
 const doExps = (exps: Exps, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
-         [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+         [makeEdge(parentNode,makeNodeDecl(my_id,`:`),makeEdgeLable(lable))]
          .concat(flatten(exps.exps.map((x:Exp)=>innerNode(x,makeNodeRef(my_id),'',GC))))
 
 const doDefineExp = (def: DefineExp, my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[] =>
@@ -128,7 +128,7 @@ const doAppExp = (app: AppExp, my_id: string , parentNode: Node ,lable: string ,
              innerNode(app.rator,(isRoot) ? makeNodeDecl(my_id,'AppExp'):makeNodeRef(my_id),'rator',GC))
             .concat(innerNode(makeRands(app.rands),makeNodeRef(my_id),'rands',GC))
 const doRands = (rands: Rands, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
-            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            [makeEdge(parentNode,makeNodeDecl(my_id,`:`),makeEdgeLable(lable))]
             .concat(flatten(rands.cexps.map((cexp:CExp)=> innerNode(cexp,makeNodeRef(my_id),'',GC))))
 const doAtomicExp = (exp: AtomicExp, parentNode: Node ,lable: string ,GC : GlobalCounter): Edge[]=>
             (lable === '') ? [makeEdge(parentNode,AtomicExpToNodeDecl(exp,GC))]:
@@ -152,7 +152,7 @@ const doProcExp = (proc: ProcExp,my_id: string , parentNode: Node ,lable: string
             innerNode(makeBody(proc.body),makeNodeRef(my_id),'Proc',GC)
             ]))
 const doParms= (params:Params, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
-            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            [makeEdge(parentNode,makeNodeDecl(my_id,`:`),makeEdgeLable(lable))]
             .concat(flatten(params.decls.map((x:VarDecl)=>innerNode(x,makeNodeRef(my_id),'',GC))))
 const doLetExp = (letexp: LetExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
             flatten([
@@ -171,7 +171,7 @@ const doLetrecExp = (letexp: LetrecExp,my_id: string , parentNode: Node ,lable: 
                 ,innerNode(makeBody(letexp.body),makeNodeRef(my_id),'body',GC)
             ])
 const doBody = (body:Body, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
-            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            [makeEdge(parentNode,makeNodeDecl(my_id,`:`),makeEdgeLable(lable))]
             .concat(flatten(body.cexps.map((x:CExp)=>innerNode(x,makeNodeRef(my_id),'',GC))))
 const doBinding = (binding: Binding,my_id: string , parentNode: Node ,GC : GlobalCounter): Edge[] =>
             flatten([makeEdge(parentNode,makeNodeDecl(my_id,'Binding')),
@@ -179,7 +179,7 @@ const doBinding = (binding: Binding,my_id: string , parentNode: Node ,GC : Globa
             innerNode(binding.val,makeNodeRef(my_id),'val',GC),
             ])
 const doBindings = (bindings: Bindings, my_id : string, parentNode: Node, lable: string, GC : GlobalCounter): Edge[]=>
-            [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
+            [makeEdge(parentNode,makeNodeDecl(my_id,`:`),makeEdgeLable(lable))]
             .concat(flatten(bindings.bindings.map((bind:Binding)=> innerNode(bind,makeNodeRef(my_id),'',GC))))
 
 const doLitExp= (litexp: LitExp,my_id: string , parentNode: Node ,lable: string ,isRoot: Boolean,GC : GlobalCounter): Edge[]=>
