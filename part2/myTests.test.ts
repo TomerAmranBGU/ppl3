@@ -11,16 +11,25 @@ import { L4toMermaid, mapL4toMermaid } from "./mermaid";
 import { parse as p, isSexpString, isToken } from "../shared/parser";
 const util = require('util');
 
-const p1 = L4toMermaid('(L4 (define x 1) (+ 1 2) #t 3)');
+const p1 = L4toMermaid('(L4 (define x 1) (define y (if #t 1 +)) (+ 1 2) #t 3 x y)');
 const p2 = L4toMermaid('(/ #t 2)');
 const p3 = L4toMermaid(`(define x 1)`);
 const p4 = L4toMermaid('+');
+const p5 = L4toMermaid('"Hello"');
+const p6 = L4toMermaid('(if #t 1 +)');
+const p7 = L4toMermaid('(lambda (x y) (+ x y))');
+const p8 = L4toMermaid('(L4 1 (lambda (x y) (+ x y)))');
 
 
-isOk(p1) ? console.log(p1.value) : console.log(p1.message)
-isOk(p2) ? console.log(p2.value) : console.log(p2.message)
+// isOk(p1) ? console.log(p1.value) : console.log(p1.message)
+// isOk(p2) ? console.log(p2.value) : console.log(p2.message)
 // isOk(p3) ? console.log(p3.value) : console.log(p3.message)
 // isOk(p4) ? console.log(p4.value) : console.log(p4.message)
+// isOk(p5) ? console.log(p5.value) : console.log(p5.message)
+// isOk(p6) ? console.log(p6.value) : console.log(p6.message)
+// isOk(p7) ? console.log(p7.value) : console.log(p7.message)
+isOk(p8) ? console.log(p8.value) : console.log(p8.message)
+
 
 
 

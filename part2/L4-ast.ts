@@ -58,18 +58,18 @@ export type AtomicExp = NumExp | BoolExp | StrExp | PrimOp | VarRef;
 export type CompoundExp = AppExp | IfExp | ProcExp | LetExp | LitExp | LetrecExp | SetExp;
 export type CExp =  AtomicExp | CompoundExp;
 
-export interface Program {tag: "Program"; exps: Exp[]; }
-export interface DefineExp {tag: "DefineExp"; var: VarDecl; val: CExp; }
-export interface NumExp {tag: "NumExp"; val: number; }
-export interface BoolExp {tag: "BoolExp"; val: boolean; }
-export interface StrExp {tag: "StrExp"; val: string; }
-export interface PrimOp {tag: "PrimOp"; op: string; }
-export interface VarRef {tag: "VarRef"; var: string; }
-export interface VarDecl {tag: "VarDecl"; var: string; }
-export interface AppExp {tag: "AppExp"; rator: CExp; rands: CExp[]; }
+export interface Program {tag: "Program"; exps: Exp[]; } //V
+export interface DefineExp {tag: "DefineExp"; var: VarDecl; val: CExp; } //V
+export interface NumExp {tag: "NumExp"; val: number; } //V
+export interface BoolExp {tag: "BoolExp"; val: boolean; } //V
+export interface StrExp {tag: "StrExp"; val: string; } //V
+export interface PrimOp {tag: "PrimOp"; op: string; } //V
+export interface VarRef {tag: "VarRef"; var: string; } //V
+export interface VarDecl {tag: "VarDecl"; var: string; } //V
+export interface AppExp {tag: "AppExp"; rator: CExp; rands: CExp[]; }//V
 // L2
-export interface IfExp {tag: "IfExp"; test: CExp; then: CExp; alt: CExp; }
-export interface ProcExp {tag: "ProcExp"; args: VarDecl[], body: CExp[]; }
+export interface IfExp {tag: "IfExp"; test: CExp; then: CExp; alt: CExp; }//V
+export interface ProcExp {tag: "ProcExp"; args: VarDecl[], body: CExp[]; } //V
 export interface Binding {tag: "Binding"; var: VarDecl; val: CExp; }
 export interface LetExp {tag: "LetExp"; bindings: Binding[]; body: CExp[]; }
 // L3
