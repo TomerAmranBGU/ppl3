@@ -5,7 +5,7 @@ import { parse as p, isSexpString, isToken } from "../shared/parser";
 import { Result, makeOk, makeFailure, bind, mapResult, safe2, isOk } from "../shared/result";
 import {EdgeLable, Edge, isNodeDecl,Node, NodeRef, NodeDecl, Dir, isTD, GraphContent, isAtomicGraph, Graph, makeGraph, makeTD, makeCompoundGraph, makeEdge, makeNodeDecl, makeNodeRef, makeEdgeLable, makeAtomicGraph } from "./mermaid-ast";
 import {makeVarGen} from "../L3/substitute"
-import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp, makeBoolExp,IfExp, ProcExp } from "./L4-ast";
+import { Program,AtomicExp,Parsed, parseL4, parseL4Exp, isAtomicExp, isNumExp, isBoolExp, isStrExp, isPrimOp, isVarRef, isProgram, Exp, isDefineExp, DefineExp, isCExp, VarDecl, AppExp, CExp, isAppExp, isIfExp, isProcExp, isLetExp, isLitExp, isLetrecExp, isSetExp, makeBoolExp,IfExp, ProcExp, Binding } from "./L4-ast";
 import { isVarDecl } from "../L3/L3-ast";
 
 // interface Rands {tags: "Rands" ; }
@@ -21,7 +21,9 @@ const makeParams = (decls:VarDecl[]): Params => ({tag:"Params", decls:decls})
 interface Body {tag : "Body"; cexps:CExp[]}
 const isBody = (x:any): x is Body => (x.tag === "Body")
 const makeBody = (cexps: CExp[]): Body => ({tag:"Body", cexps:cexps})
-
+interface Bindings {tag: "Bindings" ; bindings:Binding[]}
+const isBindings = (x:any): x is Bindings => (x.tag === "Bindings")
+const makeBindings = (bindings:Binding[]): Bindings => ({tag:"Bindings", bindings:bindings})
 
 interface GlobalCounter {tag:"GlobalCounter" 
     ; ProgramCounter: (s:string)=>string
@@ -134,7 +136,11 @@ const doParms= (params:Params, my_id: string , parentNode: Node , lable:string,G
 const doBody = (body:Body, my_id: string , parentNode: Node , lable:string,GC : GlobalCounter): Edge[] =>
             [makeEdge(parentNode,makeNodeDecl(my_id,`[:]`),makeEdgeLable(lable))]
             .concat(flatten(body.cexps.map((x:CExp)=>innerNode(x,makeNodeRef(my_id),'',GC))))
-   
+const doBinding = (binding: Binding,my_id: string , parentNode: Node ,GC : GlobalCounter): Edge[] =>
+            flatten([makeEdge(parentNode,makeNodeDecl(my_id,'Binding')),
+            innerNode(binding.var,makeNodeRef(my_id),'var',GC),
+            innerNode(binding.val,makeNodeRef(my_id),'val',GC),
+            ])
 const innerNode = (exp: Exp| Exps | VarDecl | Rands | Params | Body, parentNode: Node , lable: string , GC : GlobalCounter): Edge[] =>
             isExps(exp) ? doExps(exp,GC.ExpsCounter('Exps'),parentNode,lable,GC):
             isRands(exp) ? doRands(exp,GC.RandsCounter('Rands'),parentNode,lable,GC):
