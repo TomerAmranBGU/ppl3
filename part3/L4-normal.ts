@@ -12,8 +12,7 @@ import { isClosure, makeClosure, Value, makePromise, isPromise, Promise } from "
 import { first, rest, isEmpty } from '../shared/list';
 import { Result, makeOk, makeFailure, bind, mapResult } from "../shared/result";
 import { parse as p } from "../shared/parser";
-import { isVarDecl, makeVarDecl } from "../L3/L3-ast";
-import { makeEnv } from "../L3/L3-env";
+
 
 export const L4normalEval = (exp: CExp, env: Env): Result<Value> =>
     isBoolExp(exp) ? makeOk(exp.val) :
@@ -78,6 +77,6 @@ export const evalNormalParse = (s: string): Result<Value> =>
 
 export const evalPromise = (value: Value):  Result<Value> =>
     isPromise(value) ? 
-        bind(L4normalEval(value.val, value.env),v=>evalPromise(v)):
+        bind(L4normalEval(value.val, value.env),evalPromise):
     makeOk(value)
 
