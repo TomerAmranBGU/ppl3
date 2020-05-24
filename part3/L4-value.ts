@@ -1,16 +1,28 @@
 // ========================================================
 // Value type definition for L4
 
-import { isPrimOp, CExp, PrimOp, VarDecl } from './L4-ast';
+import { isPrimOp, Exp, CExp, PrimOp, VarDecl } from './L4-ast';
 import { Env } from './L4-env';
 import { append } from 'ramda';
 import { isArray, isNumber, isString } from '../shared/type-predicates';
+import { isCExp } from '../L3/L3-ast';
 
 
-export type Value = SExpValue | Closure;
+export type Value = SExpValue | Closure | Promise;
 
 export type Functional = PrimOp | Closure;
 export const isFunctional = (x: any): x is Functional => isPrimOp(x) || isClosure(x);
+
+// ========================================================
+// Promise - Value of unevaluated Define expression 
+export interface Promise {
+    tag: "Promise";
+    val: CExp[];
+    env: Env;
+}
+export const makePromise = (val: CExp[], env: Env) : Promise =>
+    ({tag: "Promise", val: val, env: env});
+export const isPromise = (x: any): x is Promise => x.tag === "Promise";
 
 // ========================================================
 // Closure for L4 - the field env is added.
