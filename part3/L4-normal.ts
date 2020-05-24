@@ -30,7 +30,9 @@ export const L4normalEval = (exp: CExp, env: Env): Result<Value> =>
 
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
     bind(bind(L4normalEval(exp.test, env),evalPromise),
-         test => isTrueValue(test) ? L4normalEval(exp.then, env) : L4normalEval(exp.alt, env));
+         test => isTrueValue(test) ? 
+         L4normalEval(exp.then, env) : 
+         L4normalEval(exp.alt, env));
 
 // Purpose: Apply a procedure to NON evaluated arguments.
 // Signature: L4-normalApplyProcedure(proc, args)
@@ -40,10 +42,13 @@ const L4normalApplyProc = (proc: Value, args: CExp[], env: Env): Result<Value> =
         const argVals: Result<Value[]> = mapResult((arg) => bind(L4normalEval(arg, env),evalPromise), args); // in case of return Promise, take out the Value
         return bind(argVals, (args: Value[]) => applyPrimitive(proc, args));
     } else if (isClosure(proc)) {
-     
+        /*
+        const applyClosure = (proc: Closure, args: CExp[],env:Env): Result<Value> =>
+        evalExps(proc.body, makeExtEnv(map((v: VarDecl) => v.var, proc.params), args, proc.env,env));
+        */
         const vars = map((v: VarDecl)=> v.var , proc.params)
         return bind(
-            evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),env))
+            evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),proc.env))
             ,evalPromise)
     }
     else {

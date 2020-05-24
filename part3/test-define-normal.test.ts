@@ -20,7 +20,7 @@ const p6 = bind(parseL4(
             (if (eq? l '())
                 l
                 (cons (f (car l)) (map f (cdr l))))))
-        (map (lambda (x) x) '(1 2 3)))`
+        (map (lambda (x) (* x x)) '(1 2 3)))`
   ), evalNormalProgram);
 //x = promies((- x 1), env)
 // pretty(e1);
