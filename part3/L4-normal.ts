@@ -42,10 +42,7 @@ const L4normalApplyProc = (proc: Value, args: CExp[], env: Env): Result<Value> =
         const argVals: Result<Value[]> = mapResult((arg) => bind(L4normalEval(arg, env),evalPromise), args); // in case of return Promise, take out the Value
         return bind(argVals, (args: Value[]) => applyPrimitive(proc, args));
     } else if (isClosure(proc)) {
-        /*
-        const applyClosure = (proc: Closure, args: CExp[],env:Env): Result<Value> =>
-        evalExps(proc.body, makeExtEnv(map((v: VarDecl) => v.var, proc.params), args, proc.env,env));
-        */
+       
         const vars = map((v: VarDecl)=> v.var , proc.params)
         return bind(
             evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),proc.env))
