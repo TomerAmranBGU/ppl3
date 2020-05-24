@@ -2,7 +2,7 @@
 // L4 normal eval
 import { Sexp } from "s-expression";
 import { map } from "ramda";
-import { CExp, Exp, IfExp, Program, parseL4Exp } from "./L4-ast";
+import { CExp, Exp, IfExp, Program, parseL4Exp, VarDecl } from "./L4-ast";
 import { isAppExp, isBoolExp, isCExp, isDefineExp, isIfExp, isLitExp, isNumExp,
          isPrimOp, isProcExp, isStrExp, isVarRef } from "./L4-ast";
 import { applyEnv, makeEmptyEnv, Env, makeExtEnv } from './L4-env-normal';
@@ -26,11 +26,11 @@ export const L4normalEval = (exp: CExp, env: Env): Result<Value> =>
     isProcExp(exp) ? makeOk(makeClosure(exp.args, exp.body, env)) :
     // This is the difference between applicative-eval and normal-eval
     // Substitute the arguments into the body without evaluating them first.
-    isAppExp(exp) ? bind(L4normalEval(exp.rator, env), proc => L4normalApplyProc(proc, exp.rands, env)) :
+    isAppExp(exp) ? bind(bind(L4normalEval(exp.rator, env),evalPromise), proc => L4normalApplyProc(proc, exp.rands, env)) :
     makeFailure(`Bad ast: ${exp}`);
 
 const evalIf = (exp: IfExp, env: Env): Result<Value> =>
-    bind(L4normalEval(exp.test, env),
+    bind(bind(L4normalEval(exp.test, env),evalPromise),
          test => isTrueValue(test) ? L4normalEval(exp.then, env) : L4normalEval(exp.alt, env));
 
 // Purpose: Apply a procedure to NON evaluated arguments.
@@ -38,12 +38,13 @@ const evalIf = (exp: IfExp, env: Env): Result<Value> =>
 // Pre-conditions: proc must be a prim-op or a closure value
 const L4normalApplyProc = (proc: Value, args: CExp[], env: Env): Result<Value> => {
     if (isPrimOp(proc)) {
-        const argVals: Result<Value[]> = mapResult((arg) => (evalPromise(L4normalEval(arg, env)), args); // in case of return Promise, take out the Value
+        const argVals: Result<Value[]> = mapResult((arg) => bind(L4normalEval(arg, env),evalPromise), args); // in case of return Promise, take out the Value
         return bind(argVals, (args: Value[]) => applyPrimitive(proc, args));
     } else if (isClosure(proc)) {
-        
-        mapResult((arg) => L4normalEval(arg, env), args);
-    } else {
+        const vars = map((v: VarDecl)=> v.var , proc.params)
+        return evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),env))
+    }
+    else {
         return makeFailure(`Bad proc applied ${proc}`);
     }
 };
@@ -64,7 +65,7 @@ const evalCExps = (exp1: Exp, exps: Exp[], env: Env): Result<Value> =>
 // then compute the rest of the exps in the new env.
 const evalDefineExps = (def: Exp, exps: Exp[], env: Env): Result<Value> =>
     isDefineExp(def) ?    
-        evalExps(exps, makeExtEnv([def.var.var], [makePromise([def.val], env)], env)):   
+        evalExps(exps, makeExtEnv([def.var.var], [makePromise(def.val, env)], env)):   
     makeFailure("Unexpected " + def);
 
 export const evalNormalProgram = (program: Program): Result<Value> =>
@@ -75,8 +76,8 @@ export const evalNormalParse = (s: string): Result<Value> =>
          (parsed: Sexp) => bind(parseL4Exp(parsed),
                                 (exp: Exp) => evalExps([exp], makeEmptyEnv())));
 
-export const evalPromise = (value: Result<Value>):  Result<Value> =>
+export const evalPromise = (value: Value):  Result<Value> =>
     isPromise(value) ? 
-        evalCExps(first(value.val), rest(value.val), value.env):
-    makeOk(value);
+        bind(L4normalEval(value.val, value.env),v=>evalPromise(v)):
+    makeOk(value)
 

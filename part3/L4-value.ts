@@ -17,10 +17,10 @@ export const isFunctional = (x: any): x is Functional => isPrimOp(x) || isClosur
 // Promise - Value of unevaluated Define expression 
 export interface Promise {
     tag: "Promise";
-    val: CExp[];
+    val: CExp;
     env: Env;
 }
-export const makePromise = (val: CExp[], env: Env) : Promise =>
+export const makePromise = (val: CExp, env: Env) : Promise =>
     ({tag: "Promise", val: val, env: env});
 export const isPromise = (x: any): x is Promise => x.tag === "Promise";
 
