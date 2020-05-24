@@ -5,7 +5,7 @@ import { map } from "ramda";
 import { CExp, Exp, IfExp, Program, parseL4Exp, VarDecl } from "./L4-ast";
 import { isAppExp, isBoolExp, isCExp, isDefineExp, isIfExp, isLitExp, isNumExp,
          isPrimOp, isProcExp, isStrExp, isVarRef } from "./L4-ast";
-import { applyEnv, makeEmptyEnv, Env, makeExtEnv } from './L4-env-normal';
+import { applyEnv, makeEmptyEnv, Env, makeExtEnv, makeRecEnv } from './L4-env-normal';
 import { isTrueValue } from "./L4-eval";
 import { applyPrimitive } from "./evalPrimitive";
 import { isClosure, makeClosure, Value, makePromise, isPromise, Promise } from "./L4-value";
@@ -40,8 +40,11 @@ const L4normalApplyProc = (proc: Value, args: CExp[], env: Env): Result<Value> =
         const argVals: Result<Value[]> = mapResult((arg) => bind(L4normalEval(arg, env),evalPromise), args); // in case of return Promise, take out the Value
         return bind(argVals, (args: Value[]) => applyPrimitive(proc, args));
     } else if (isClosure(proc)) {
+     
         const vars = map((v: VarDecl)=> v.var , proc.params)
-        return evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),env))
+        return bind(
+            evalExps(proc.body, makeExtEnv(vars,map((exp:CExp)=> makePromise(exp,env), args),env))
+            ,evalPromise)
     }
     else {
         return makeFailure(`Bad proc applied ${proc}`);
@@ -64,7 +67,9 @@ const evalCExps = (exp1: Exp, exps: Exp[], env: Env): Result<Value> =>
 // then compute the rest of the exps in the new env.
 const evalDefineExps = (def: Exp, exps: Exp[], env: Env): Result<Value> =>
     isDefineExp(def) ?    
-        evalExps(exps, makeExtEnv([def.var.var], [makePromise(def.val, env)], env)):   
+    (isProcExp(def.val)) ?
+        evalExps(exps,makeRecEnv([def.var.var], [def.val.args], [def.val.body], env)):
+    evalExps(exps, makeExtEnv([def.var.var], [makePromise(def.val, env)], env)):   
     makeFailure("Unexpected " + def);
 
 export const evalNormalProgram = (program: Program): Result<Value> =>
@@ -77,6 +82,7 @@ export const evalNormalParse = (s: string): Result<Value> =>
 
 export const evalPromise = (value: Value):  Result<Value> =>
     isPromise(value) ? 
+            // L4normalEval(value.val, value.env):
         bind(L4normalEval(value.val, value.env),evalPromise):
     makeOk(value)
 

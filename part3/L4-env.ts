@@ -55,6 +55,7 @@ export const applyEnv = (env: Env, v: string): Result<Value> =>
     applyRecEnv(env, v);
 
 const applyExtEnv = (env: ExtEnv, v: string): Result<Value> =>
+    
     env.vars.includes(v) ? makeOk(env.vals[env.vars.indexOf(v)]) :
     applyEnv(env.nextEnv, v);
 
