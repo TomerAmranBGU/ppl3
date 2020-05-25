@@ -81,10 +81,10 @@ const evalLet = (exp: LetExp, env: Env): Result<Value> =>
             // const vals: CExp[] = map((bind: Binding) => bind.val, exp.bindings); // map the values
             // const vars: string[] = map((bind: Binding) => bind.var, exp.bindings)    // map the names
             bind(evalExps(exp.body, 
-                makeExtEnv(
-                            map((bind: Binding) => bind.var.var, exp.bindings),
-                            map((bind: Binding) => bind.val, exp.bindings).map((val:CExp) => makePromise(val, env)),
-                            env)), evalPromise)
+                makeExtEnv(map((bind: Binding) => bind.var.var, exp.bindings) //vars names
+                            ,map((bind: Binding) => bind.val, exp.bindings) // args Promises
+                                .map((val:CExp) => makePromise(val, env))
+                            ,env)), evalPromise) 
         // makeFailure ("Never");
 
 export const evalNormalProgram = (program: Program): Result<Value> =>

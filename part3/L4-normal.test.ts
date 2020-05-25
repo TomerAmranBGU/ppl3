@@ -146,5 +146,10 @@ describe('L4 Normal Eval', () => {
         expect(bind(parseL4(`
             (L4 (let ((x 1)) (+ 1 x)))
         `), evalNormalProgram)).to.deep.equal(makeOk(2));
+        expect(bind(parseL4(`
+            (L4 (let ((x 1)) (+
+                (let ((x 3) (y 2)) (+ x y))
+                  x)))
+        `), evalNormalProgram)).to.deep.equal(makeOk(6));
     });
 });
