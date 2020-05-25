@@ -153,3 +153,4 @@ describe('L4 Normal Eval', () => {
         `), evalNormalProgram)).to.deep.equal(makeOk(6));
     });
 });
+console.log(bind(parseL4('(L4 ((lambda (x y) (+ y y)) 3))'),evalNormalProgram))
