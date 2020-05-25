@@ -59,23 +59,23 @@ describe('L4 Normal Eval', () => {
     });
 
     it('evaluates higher-order functions', () => {
-        // expect(bind(parseL4(`
-        //     (L4 (define map
-        //           (lambda (f l)
-        //             (if (eq? l '())
-        //                 l
-        //                 (cons (f (car l)) (map f (cdr l))))))
-        //         (map (lambda (x) (* x x)) '(1 2 3)))`), evalNormalProgram)).to.deep.equal(makeOk(listPrim([1, 4, 9])));
+        expect(bind(parseL4(`
+            (L4 (define map
+                  (lambda (f l)
+                    (if (eq? l '())
+                        l
+                        (cons (f (car l)) (map f (cdr l))))))
+                (map (lambda (x) (* x x)) '(1 2 3)))`), evalNormalProgram)).to.deep.equal(makeOk(listPrim([1, 4, 9])));
 
-        // expect(bind(parseL4(`
-        //     (L4 (define empty? (lambda (x) (eq? x '())))
-        //         (define filter (lambda (pred l)
-        //                          (if (empty? l)
-        //                              l
-        //                              (if (pred (car l))
-        //                                  (cons (car l) (filter pred (cdr l)))
-        //                                  (filter pred (cdr l))))))
-        //         (filter (lambda (x) (not (= x 2))) '(1 2 3 2)))`), evalNormalProgram)).to.deep.equal(makeOk(listPrim([1, 3])));
+        expect(bind(parseL4(`
+            (L4 (define empty? (lambda (x) (eq? x '())))
+                (define filter (lambda (pred l)
+                                 (if (empty? l)
+                                     l
+                                     (if (pred (car l))
+                                         (cons (car l) (filter pred (cdr l)))
+                                         (filter pred (cdr l))))))
+                (filter (lambda (x) (not (= x 2))) '(1 2 3 2)))`), evalNormalProgram)).to.deep.equal(makeOk(listPrim([1, 3])));
 
         expect(bind(parseL4(`
             (L4 (define compose (lambda (f g) (lambda (x) (f (g x)))))
@@ -136,5 +136,15 @@ describe('L4 Normal Eval', () => {
             (L4 (define f (lambda (x) (display x) (newline) (+ x 1)))
                 (define g (lambda (x) 5))
                 (g (f 0)))`), evalNormalProgram)).to.deep.equal(makeOk(5));
+    });
+
+    it('MY TEST', () => {
+        expect(bind(parseL4(`
+            (L4 (let ((x 5)) x))
+            `), evalNormalProgram)).to.deep.equal(makeOk(5));
+
+        expect(bind(parseL4(`
+            (L4 (let ((x 1)) (+ 1 x)))
+        `), evalNormalProgram)).to.deep.equal(makeOk(2));
     });
 });

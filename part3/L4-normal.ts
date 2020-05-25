@@ -2,9 +2,9 @@
 // L4 normal eval
 import { Sexp } from "s-expression";
 import { map } from "ramda";
-import { CExp, Exp, IfExp, Program, parseL4Exp, VarDecl } from "./L4-ast";
+import { CExp, Exp, IfExp, Program, parseL4Exp, VarDecl, LetExp } from "./L4-ast";
 import { isAppExp, isBoolExp, isCExp, isDefineExp, isIfExp, isLitExp, isNumExp,
-         isPrimOp, isProcExp, isStrExp, isVarRef } from "./L4-ast";
+         isPrimOp, isProcExp, isStrExp, isVarRef} from "./L4-ast";
 import { applyEnv, makeEmptyEnv, Env, makeExtEnv, makeRecEnv } from './L4-env-normal';
 import { isTrueValue } from "./L4-eval";
 import { applyPrimitive } from "./evalPrimitive";
@@ -12,6 +12,7 @@ import { isClosure, makeClosure, Value, makePromise, isPromise, Promise } from "
 import { first, rest, isEmpty } from '../shared/list';
 import { Result, makeOk, makeFailure, bind, mapResult } from "../shared/result";
 import { parse as p } from "../shared/parser";
+import { isLetExp, Binding } from "./L4-ast";
 
 
 export const L4normalEval = (exp: CExp, env: Env): Result<Value> =>
@@ -22,6 +23,7 @@ export const L4normalEval = (exp: CExp, env: Env): Result<Value> =>
     isLitExp(exp) ? makeOk(exp.val) :
     isVarRef(exp) ? applyEnv(env, exp.var) :
     isIfExp(exp) ? evalIf(exp, env) :
+    isLetExp(exp) ? evalLet(exp, env) :
     isProcExp(exp) ? makeOk(makeClosure(exp.args, exp.body, env)) :
     // This is the difference between applicative-eval and normal-eval
     // Substitute the arguments into the body without evaluating them first.
@@ -73,6 +75,17 @@ const evalDefineExps = (def: Exp, exps: Exp[], env: Env): Result<Value> =>
         evalExps(exps,makeRecEnv([def.var.var], [def.val.args], [def.val.body], env)):
     evalExps(exps, makeExtEnv([def.var.var], [makePromise(def.val, env)], env)):   
     makeFailure("Unexpected " + def);
+
+const evalLet = (exp: LetExp, env: Env): Result<Value> =>
+    // isLetExp(exp) ?
+            // const vals: CExp[] = map((bind: Binding) => bind.val, exp.bindings); // map the values
+            // const vars: string[] = map((bind: Binding) => bind.var, exp.bindings)    // map the names
+            bind(evalExps(exp.body, 
+                makeExtEnv(
+                            map((bind: Binding) => bind.var.var, exp.bindings),
+                            map((bind: Binding) => bind.val, exp.bindings).map((val:CExp) => makePromise(val, env)),
+                            env)), evalPromise)
+        // makeFailure ("Never");
 
 export const evalNormalProgram = (program: Program): Result<Value> =>
     evalExps(program.exps, makeEmptyEnv());
